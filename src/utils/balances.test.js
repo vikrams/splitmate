@@ -38,3 +38,13 @@ describe('computeNet with unequal splits', () => {
     expect(computeNet([legacy, { ...legacy, isDeleted: true }])).toEqual({ a: 500, b: -500 })
   })
 })
+
+describe('settlement payments', () => {
+  it('reduces what the payer owes', () => {
+    const e = { ...base, participants: ['a', 'b'], amountCents: 1000 }
+    const pay = { isDeleted: false, isSettlement: true, paidBy: 'b', amountCents: 500, participants: ['a'], splits: [{ email: 'a', amountCents: 500 }] }
+    expect(computeNet([e])).toEqual({ a: 500, b: -500 })
+    expect(computeNet([e, pay])).toEqual({ a: 0, b: 0 })
+    expect(computeSettlements([e, pay])).toEqual([])
+  })
+})
