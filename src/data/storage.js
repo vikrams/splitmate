@@ -53,9 +53,18 @@ export function addGroup({ name, createdBy, members }) {
   return group
 }
 
+export function removeGroupMember(groupId, email) {
+  write(
+    KEYS.groups,
+    getGroups().map((g) => (g.id === groupId ? { ...g, members: g.members.filter((m) => m !== email) } : g)),
+  )
+  return getGroup(groupId)
+}
+
 // Expenses: { id, groupId, description, amountCents, date, paidBy, participants: [email],
 //   splits: [{ email, amountCents }] (sums to amountCents; absent on legacy = equal split),
-//   splitMode: 'equal' | 'manual', isDeleted }
+//   splitMode: 'equal' | 'manual', createdBy: email (absent on legacy), isDeleted,
+//   isSettlement?: true (a payment: paidBy pays the single person in splits) }
 export const getExpenses = (groupId) =>
   read(KEYS.expenses, []).filter((e) => e.groupId === groupId)
 export function addExpense(data) {
@@ -69,4 +78,11 @@ export function softDeleteExpense(id) {
     KEYS.expenses,
     read(KEYS.expenses, []).map((e) => (e.id === id ? { ...e, isDeleted: true } : e)),
   )
+}
+// Edit = soft-delete the old record and add a fresh one, so history and balances stay consistent.
+export function replaceExpense(oldId, data) {
+  const all = read(KEYS.expenses, [])
+  const expense = { id: newId(), ...data, isDeleted: false, createdAt: new Date().toISOString() }
+  write(KEYS.expenses, [...all.map((e) => (e.id === oldId ? { ...e, isDeleted: true } : e)), expense])
+  return expense
 }

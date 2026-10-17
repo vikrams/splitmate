@@ -17,7 +17,7 @@ export default function Navbar() {
               logout()
               navigate('/')
             }}
-            className="cursor-hand-lg text-ink-3 hover:text-ink"
+            className="btn btn-secondary"
           >
             Sign out
           </button>

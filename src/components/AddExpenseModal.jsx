@@ -2,17 +2,22 @@ import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { formatMoney, splitEqually, toCents } from '../utils/money'
 
-export default function AddExpenseModal({ members, onSave, onCancel }) {
+export default function AddExpenseModal({ members, expense, onSave, onCancel }) {
   const { user, displayName } = useAuth()
-  const [description, setDescription] = useState('')
-  const [amount, setAmount] = useState('')
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
-  const [paidBy, setPaidBy] = useState(members.includes(user.email) ? user.email : members[0])
-  const [participants, setParticipants] = useState(members)
+  const isEdit = !!expense
+  const [description, setDescription] = useState(expense?.description ?? '')
+  const [amount, setAmount] = useState(expense ? (expense.amountCents / 100).toFixed(2) : '')
+  const [date, setDate] = useState(() => expense?.date ?? new Date().toISOString().slice(0, 10))
+  const [paidBy, setPaidBy] = useState(expense?.paidBy ?? (members.includes(user.email) ? user.email : members[0]))
+  const [participants, setParticipants] = useState(expense?.participants ?? members)
 
-  const [splitMode, setSplitMode] = useState('equal')
+  const [splitMode, setSplitMode] = useState(expense?.splitMode ?? 'equal')
   // Typed custom amounts (dollar strings) by email; kept when switching back to equal.
-  const [manual, setManual] = useState({})
+  const [manual, setManual] = useState(() =>
+    expense?.splitMode === 'manual' && expense.splits
+      ? Object.fromEntries(expense.splits.map((s) => [s.email, (s.amountCents / 100).toFixed(2)]))
+      : {},
+  )
 
   const cents = toCents(amount)
   const isManual = splitMode === 'manual'
@@ -68,7 +73,7 @@ export default function AddExpenseModal({ members, onSave, onCancel }) {
     <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/40 p-4" onClick={onCancel}>
       <form onSubmit={submit} onClick={(e) => e.stopPropagation()} className="max-h-full w-full max-w-[480px] overflow-y-auto rounded-2xl bg-surface p-6">
         <div className="mb-4 flex items-center justify-between border-b border-line pb-4">
-          <h2 className="text-lg font-semibold">Add expense</h2>
+          <h2 className="text-lg font-semibold">{isEdit ? 'Edit expense' : 'Add expense'}</h2>
           <button type="button" onClick={onCancel} aria-label="Close" className="text-xl leading-none text-ink-3 hover:text-ink">
             ×
           </button>
